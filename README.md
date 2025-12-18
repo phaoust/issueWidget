@@ -72,6 +72,11 @@ Specify explicitly:
 issueWidget --user phaoust --repo issueWidget --issue 1
 ```
 
+Or use the shorthand `--project` format:
+```bash
+issueWidget --project phaoust/issueWidget --issue 1
+```
+
 ### Multiple Git Hosts
 
 IssueWidget automatically detects the git host from your remote URL and supports:
@@ -79,12 +84,19 @@ IssueWidget automatically detects the git host from your remote URL and supports
 - **GitHub** - `github.com` (default)
 - **GitLab** - `gitlab.com` or self-hosted GitLab instances
 - **Bitbucket** - `bitbucket.org`
-- **Trello** - `trello.com` (board URLs)
+- **Trello** - `trello.com` (board URLs, use `--project` for board ID)
+- **Asana** - `asana.com` (use `--project` for project ID)
 - **Other git hosts** - Any standard git hosting platform
 
 Host is auto-detected from git remote, or specify manually:
 ```bash
 issueWidget --host gitlab.com --user myuser --repo myrepo --issue 42
+```
+
+For non-git platforms, use `--project`:
+```bash
+issueWidget --host trello.com --project BOARD_ID --issue 42
+issueWidget --host asana.com --project PROJECT_ID --issue 42
 ```
 
 Each platform uses its correct URL format:
@@ -94,13 +106,12 @@ Each platform uses its correct URL format:
 
 #### Trello Example
 
-Trello works differently since it uses board URLs instead of issue tracking:
+Trello works differently since it uses board URLs instead of issue tracking. Use the `--project` parameter for the board ID:
 
 ```bash
-# --user is the board ID (from your Trello board URL)
-# --repo can be anything (ignored for Trello)
+# --project is the board ID (from your Trello board URL)
 # --issue is your card/task reference number
-issueWidget --host trello.com --user abc123XYZ --repo myboard --issue 42
+issueWidget --host trello.com --project abc123XYZ --issue 42
 ```
 
 This opens: `https://trello.com/b/abc123XYZ`
@@ -108,6 +119,7 @@ This opens: `https://trello.com/b/abc123XYZ`
 To find your Trello board ID, look at your board URL:
 - Board URL: `https://trello.com/b/abc123XYZ/my-project-board`
 - Board ID: `abc123XYZ` (the part after `/b/`)
+- Note: The board name in the URL (my-project-board) is managed by Trello and doesn't affect our widget
 
 ### Check Current Issue
 

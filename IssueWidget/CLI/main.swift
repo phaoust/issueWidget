@@ -33,6 +33,7 @@ struct CLI {
         var repo: String?
         var issue: Int?
         var host: String?
+        var project: String?
 
         var i = 1
         while i < args.count {
@@ -58,6 +59,11 @@ struct CLI {
                     host = args[i + 1]
                     i += 1
                 }
+            case "--project":
+                if i + 1 < args.count {
+                    project = args[i + 1]
+                    i += 1
+                }
             default:
                 break
             }
@@ -75,6 +81,32 @@ struct CLI {
                 }
                 if host == nil {
                     host = gitInfo.host
+                }
+            }
+        }
+
+        // Handle --project parameter for non-git hosts
+        if let projectValue = project {
+            let effectiveHost = host ?? "github.com"
+
+            // For non-git hosts (Trello, Asana, etc.), --project maps to the project/board ID
+            if effectiveHost.contains("trello") || effectiveHost.contains("asana") {
+                user = projectValue
+                // Always set repo to a placeholder for non-git hosts
+                repo = "project"
+            } else {
+                // For git hosts, --project could be "user/repo" format
+                let parts = projectValue.split(separator: "/")
+                if parts.count == 2 {
+                    user = String(parts[0])
+                    repo = String(parts[1])
+                } else {
+                    // Single value, treat as repo if user is already set, otherwise as user
+                    if user != nil {
+                        repo = projectValue
+                    } else {
+                        user = projectValue
+                    }
                 }
             }
         }
@@ -233,27 +265,31 @@ struct CLI {
         print("""
         Usage:
           issueWidget --issue <number> [--repo <repo>] [--user <user>] [--host <host>]
+          issueWidget --issue <number> --project <project> [--host <host>]
           issueWidget --status
           issueWidget --clear
           issueWidget --quit
 
         Options:
-          --issue <number>  Issue number
-          --repo <repo>     Repository name (auto-detected from git if omitted)
-          --user <user>     Username (auto-detected from git if omitted)
-          --host <host>     Git host (auto-detected from git, defaults to github.com)
-          --status          Show current issue as JSON
-          --clear           Clear the current issue
-          --quit            Quit the IssueWidget app
+          --issue <number>    Issue number
+          --repo <repo>       Repository name (auto-detected from git if omitted)
+          --user <user>       Username (auto-detected from git if omitted)
+          --host <host>       Git host (auto-detected from git, defaults to github.com)
+          --project <project> Project/board ID (for Trello, Asana, etc.) or user/repo format
+          --status            Show current issue as JSON
+          --clear             Clear the current issue
+          --quit              Quit the IssueWidget app
 
         Supported hosts:
           GitHub, GitLab, Bitbucket, and other standard git hosts
-          Trello (--user is board ID, opens board directly)
+          Trello, Asana (use --project for board/project ID)
 
         Examples:
           issueWidget --issue 1
           issueWidget --user phaoust --repo issueWidget --issue 1
+          issueWidget --project phaoust/issueWidget --issue 1
           issueWidget --host gitlab.com --user myuser --repo myrepo --issue 42
+          issueWidget --host trello.com --project abc123XYZ --issue 42
           issueWidget --status
           issueWidget --clear
           issueWidget --quit
