@@ -1,7 +1,15 @@
 import Foundation
+import AppKit
 
 struct CLI {
     static func run() {
+        // Ensure app is running for commands that need it
+        let needsApp = !CommandLine.arguments.contains("--status") &&
+                      !CommandLine.arguments.contains("--help")
+
+        if needsApp {
+            ensureAppIsRunning()
+        }
         let args = CommandLine.arguments
 
         if args.contains("--status") {
@@ -148,6 +156,58 @@ struct CLI {
             object: nil
         )
         print("Quit signal sent to IssueWidget app")
+    }
+
+    static func ensureAppIsRunning() {
+        let bundleID = "com.issuewidget.IssueWidget"
+
+        // Check if app is already running
+        let runningApps = NSWorkspace.shared.runningApplications
+        let isRunning = runningApps.contains { app in
+            app.bundleIdentifier == bundleID
+        }
+
+        if !isRunning {
+            // Try to find and launch the app
+            let appPath = findAppPath()
+
+            if let path = appPath {
+                let task = Process()
+                task.launchPath = "/usr/bin/open"
+                task.arguments = [path]
+
+                do {
+                    try task.run()
+                    // Give the app time to start up
+                    Thread.sleep(forTimeInterval: 1.5)
+                } catch {
+                    print("Warning: Could not launch IssueWidget app")
+                }
+            }
+        }
+    }
+
+    static func findAppPath() -> String? {
+        // Check common locations
+        let possiblePaths = [
+            "/Applications/IssueWidget.app",
+            "\(FileManager.default.homeDirectoryForCurrentUser.path)/Applications/IssueWidget.app",
+            // Relative to CLI binary in build directory
+            "\(CommandLine.arguments[0])/../../IssueWidget.app",
+            // Build directory
+            "build/IssueWidget.app"
+        ]
+
+        for path in possiblePaths {
+            let expandedPath = (path as NSString).expandingTildeInPath
+            let resolvedPath = (expandedPath as NSString).standardizingPath
+
+            if FileManager.default.fileExists(atPath: resolvedPath) {
+                return resolvedPath
+            }
+        }
+
+        return nil
     }
 
     static func printUsage() {

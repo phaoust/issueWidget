@@ -6,27 +6,36 @@
 # 1. Build everything
 ./build.sh
 
-# 2. Launch the menu bar app
-open build/IssueWidget.app
-
-# 3. Set your current issue
+# 2. Set your current issue (auto-launches the app!)
 ./build/issueWidget --user phaoust --repo myproject --issue 266
 
-# 4. Look at your menu bar - you should see "#266"
-# 5. Click it - your browser opens the GitHub issue
+# 3. Look at your menu bar - you should see "#266"
+# 4. Click it - your browser opens the GitHub issue
 ```
+
+The CLI automatically launches the menu bar app if it's not running.
 
 ## Install for Daily Use
 
+### Easy Install (Recommended)
 ```bash
-# Install CLI to PATH
-sudo cp build/issueWidget /usr/local/bin/
+./install.sh
+```
+
+This installs:
+- CLI tool to `~/bin/issueWidget`
+- App to `~/Applications/IssueWidget.app`
+
+The script will warn you if `~/bin` is not in your PATH.
+
+### Manual Install
+```bash
+# Install CLI to ~/bin
+cp build/issueWidget ~/bin/
+chmod +x ~/bin/issueWidget
 
 # Copy app to Applications
-cp -r build/IssueWidget.app /Applications/
-
-# Launch app (do this once, then add to Login Items)
-open /Applications/IssueWidget.app
+cp -r build/IssueWidget.app ~/Applications/
 ```
 
 ### Add to Login Items (Auto-start)
@@ -85,20 +94,17 @@ Shuts down the menu bar app.
 
 ## How It Works
 
-1. **Menu Bar Icon**: Shows current issue number (e.g., "#266")
-2. **Tooltip**: Hover to see repository (e.g., "phaoust/myproject")
-3. **Click**: Opens GitHub issue in your default browser
-4. **CLI Updates**: Running the CLI command updates the menu bar in real-time
+1. **Auto-Launch**: CLI automatically launches the menu bar app if not running
+2. **Menu Bar Icon**: Shows current issue number (e.g., "#266")
+3. **Tooltip**: Hover to see repository (e.g., "phaoust/myproject")
+4. **Click**: Opens GitHub issue in your default browser
+5. **CLI Updates**: Running the CLI command updates the menu bar in real-time
 
 ## Troubleshooting
 
 ### App doesn't show in menu bar
+- The CLI auto-launches the app, but you can manually launch: `open build/IssueWidget.app`
 - Check if app is running: Activity Monitor → search "IssueWidget"
-- Relaunch: `killall IssueWidget && open build/IssueWidget.app`
-
-### CLI doesn't update the menu bar
-- Make sure the app is running first
-- Check app group permissions (should work without sandbox)
 
 ### Git auto-detection not working
 - Make sure you're in a git repository: `git remote -v`

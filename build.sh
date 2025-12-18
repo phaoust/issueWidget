@@ -10,7 +10,9 @@ APP_NAME="IssueWidget"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 CLI_NAME="issueWidget"
 
-# Create build directory
+# Clean and create build directory
+echo "Cleaning build directory..."
+rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 # Build CLI tool first
@@ -19,7 +21,8 @@ swiftc \
     -o "$BUILD_DIR/$CLI_NAME" \
     IssueWidget/Shared/IssueData.swift \
     IssueWidget/CLI/main.swift \
-    -framework Foundation
+    -framework Foundation \
+    -framework AppKit
 
 echo "CLI tool built: $BUILD_DIR/$CLI_NAME"
 
@@ -71,9 +74,8 @@ echo ""
 echo "Build complete!"
 echo ""
 echo "To install:"
-echo "  1. App: open $APP_BUNDLE"
-echo "  2. CLI: sudo cp $BUILD_DIR/$CLI_NAME /usr/local/bin/"
+echo "  ./install.sh"
 echo ""
-echo "Or run locally:"
-echo "  1. App: open $APP_BUNDLE"
-echo "  2. CLI: ./$BUILD_DIR/$CLI_NAME --issue 266"
+echo "Or test locally without installing:"
+echo "  ./$BUILD_DIR/$CLI_NAME --issue 266"
+echo "  (The CLI will auto-launch the menu bar app)"

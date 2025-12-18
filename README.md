@@ -4,57 +4,48 @@ A macOS menu bar app that displays your current GitHub issue. Click to open the 
 
 ## Quick Start
 
-### Option 1: Build Everything with Xcode (Recommended)
+### Simple Build & Install (Recommended)
+
+```bash
+# Build everything
+./build.sh
+
+# Install system-wide
+./install.sh
+
+# Use it!
+issueWidget --issue 266
+```
+
+### Alternative: Xcode
 
 See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for detailed Xcode setup.
-
-### Option 2: Build CLI First (Easier to test)
-
-Build just the command-line tool using Swift Package Manager:
-
-```bash
-swift build -c release
-```
-
-The CLI tool will be at `.build/release/issueWidget`
-
-Test it:
-```bash
-.build/release/issueWidget --user microsoft --repo vscode --issue 266
-```
-
-**Note**: The CLI tool works, but without the menu bar app running, you won't see the visual widget.
-
-### Option 3: Simple Build Script
-
-I can create a build script that compiles both the app and CLI using `swiftc` directly, avoiding Xcode entirely.
 
 ## Usage
 
 Once both the app and CLI are built:
 
-1. Launch the IssueWidget app (it will appear in your menu bar as "○")
-2. From any git repository:
+1. From any git repository (CLI auto-launches the app):
    ```bash
    issueWidget --issue 266
    ```
 
-3. Or specify explicitly:
+2. Or specify explicitly:
    ```bash
    issueWidget --user microsoft --repo vscode --issue 12345
    ```
 
-4. Check current issue (returns JSON):
+3. Check current issue (returns JSON):
    ```bash
    issueWidget --status
    ```
 
-5. Clear the widget:
+4. Clear the widget:
    ```bash
    issueWidget --clear
    ```
 
-6. Quit the app:
+5. Quit the app:
    ```bash
    issueWidget --quit
    ```
