@@ -92,6 +92,23 @@ Each platform uses its correct URL format:
 - GitLab: `/-/issues/123`
 - Trello: `/b/BOARD_ID`
 
+#### Trello Example
+
+Trello works differently since it uses board URLs instead of issue tracking:
+
+```bash
+# --user is the board ID (from your Trello board URL)
+# --repo can be anything (ignored for Trello)
+# --issue is your card/task reference number
+issueWidget --host trello.com --user abc123XYZ --repo myboard --issue 42
+```
+
+This opens: `https://trello.com/b/abc123XYZ`
+
+To find your Trello board ID, look at your board URL:
+- Board URL: `https://trello.com/b/abc123XYZ/my-project-board`
+- Board ID: `abc123XYZ` (the part after `/b/`)
+
 ### Check Current Issue
 
 ```bash
@@ -173,12 +190,12 @@ source ~/.zshrc
 
 ### Git auto-detection not working
 
-Ensure you're in a git repository with a GitHub remote:
+Ensure you're in a git repository with a remote:
 ```bash
 git remote -v
 ```
 
-Use explicit `--user` and `--repo` flags as fallback.
+Use explicit `--user`, `--repo`, and `--host` flags as fallback.
 
 ### App doesn't appear in menu bar
 
