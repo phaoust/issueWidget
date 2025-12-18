@@ -1,6 +1,6 @@
 # IssueWidget
 
-A macOS menu bar app that displays your current GitHub issue. Click the issue number in your menu bar to instantly open it in your browser.
+A macOS menu bar app that displays your current GitHub issue. Click the issue number in your menu bar to instantly open it in your browser. I use it within my AI Coding workflows.
 
 ## Features
 
