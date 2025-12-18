@@ -1,67 +1,184 @@
 # IssueWidget
 
-A macOS menu bar app that displays your current GitHub issue. Click to open the issue in your browser.
+A macOS menu bar app that displays your current GitHub issue. Click the issue number in your menu bar to instantly open it in your browser.
+
+## Features
+
+- **Menu bar widget** showing current issue number (e.g., "#1")
+- **Auto-launch** - CLI automatically starts the menu bar app
+- **Git auto-detection** - Reads user/repo from current directory's git remote
+- **One command** to set your current issue: `issueWidget --issue 1`
+- **Click to open** - Opens GitHub issue in your default browser
+- **Lightweight** - Native Swift, no dependencies
 
 ## Quick Start
-
-### Simple Build & Install (Recommended)
 
 ```bash
 # Build everything
 ./build.sh
 
-# Install system-wide
+# Install to ~/bin and ~/Applications
 ./install.sh
 
 # Use it!
-issueWidget --issue 266
+issueWidget --issue 1
 ```
 
-### Alternative: Xcode
+The CLI tool automatically launches the menu bar app if it's not running.
 
-See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for detailed Xcode setup.
+## Installation
+
+### Build from Source
+
+```bash
+./build.sh
+```
+
+This compiles:
+- Menu bar app: `build/IssueWidget.app`
+- CLI tool: `build/issueWidget`
+
+### Install
+
+```bash
+./install.sh
+```
+
+Installs to:
+- CLI: `~/bin/issueWidget`
+- App: `~/Applications/IssueWidget.app`
+
+The installer will warn you if `~/bin` is not in your PATH.
+
+### Requirements
+
+- macOS 13.0 (Ventura) or later
+- Swift toolchain (included with Xcode or Command Line Tools)
 
 ## Usage
 
-Once both the app and CLI are built:
+### Set Current Issue
 
-1. From any git repository (CLI auto-launches the app):
-   ```bash
-   issueWidget --issue 266
-   ```
+From any git repository:
+```bash
+issueWidget --issue 1
+```
 
-2. Or specify explicitly:
-   ```bash
-   issueWidget --user microsoft --repo vscode --issue 12345
-   ```
+Auto-detects user and repository from git remote URL.
 
-3. Check current issue (returns JSON):
-   ```bash
-   issueWidget --status
-   ```
+Specify explicitly:
+```bash
+issueWidget --user phaoust --repo issueWidget --issue 1
+```
 
-4. Clear the widget:
-   ```bash
-   issueWidget --clear
-   ```
+### Check Current Issue
 
-5. Quit the app:
-   ```bash
-   issueWidget --quit
-   ```
+```bash
+issueWidget --status
+```
 
-The menu bar will show your issue number (e.g., "#266"). Click it to open the issue in your browser.
+Returns JSON:
+```json
+{
+  "user": "phaoust",
+  "repository": "issueWidget",
+  "issue": 1,
+  "url": "https://github.com/phaoust/issueWidget/issues/1"
+}
+```
 
-## Architecture
+### Clear Current Issue
 
-- **IssueWidget App**: SwiftUI menu bar application
-- **CLI Tool**: Command-line interface with git auto-detection
-- **Shared Storage**: Uses App Groups to communicate between app and CLI
-- **Click Action**: Opens GitHub issue URL in default browser
+```bash
+issueWidget --clear
+```
 
-## Files
+Menu bar shows "○" when no issue is set.
 
-- `IssueWidget/IssueWidget/` - Menu bar app source
-- `IssueWidget/CLI/` - Command-line tool source
-- `IssueWidget/Shared/` - Shared data models
-- `Package.swift` - Swift Package Manager configuration (for CLI)
+### Quit the App
+
+```bash
+issueWidget --quit
+```
+
+## How It Works
+
+1. **CLI Tool** writes issue data to shared storage (App Groups)
+2. **Menu Bar App** reads from shared storage and displays the issue number
+3. **Auto-Launch** - CLI checks if app is running and launches it if needed
+4. **Click Handler** - Clicking the menu bar item opens the GitHub issue URL
+5. **Git Detection** - Parses `git remote get-url origin` to extract user/repo
+
+## Development
+
+### Project Structure
+
+```
+IssueWidget/
+├── IssueWidget/          # Menu bar app source
+│   ├── IssueWidgetApp.swift
+│   └── MenuBarManager.swift
+├── CLI/                  # Command-line tool source
+│   └── main.swift
+├── Shared/               # Shared data models
+│   └── IssueData.swift
+├── build.sh              # Build script
+├── install.sh            # Install script
+└── Package.swift         # Swift Package Manager config
+```
+
+### Building with Xcode
+
+See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for detailed Xcode setup.
+
+### Architecture
+
+- **Language**: Swift
+- **UI Framework**: SwiftUI + AppKit
+- **IPC**: App Groups + DistributedNotificationCenter
+- **App Type**: LSUIElement (menu bar only, no dock icon)
+
+## Troubleshooting
+
+### CLI not found after install
+
+Make sure `~/bin` is in your PATH:
+```bash
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Git auto-detection not working
+
+Ensure you're in a git repository with a GitHub remote:
+```bash
+git remote -v
+```
+
+Use explicit `--user` and `--repo` flags as fallback.
+
+### App doesn't appear in menu bar
+
+The CLI auto-launches the app, but you can manually check:
+```bash
+# Check if running
+pgrep IssueWidget
+
+# Manually launch
+open ~/Applications/IssueWidget.app
+```
+
+## Optional: Auto-start on Login
+
+1. System Settings → General → Login Items
+2. Click "+" under "Open at Login"
+3. Select IssueWidget from ~/Applications
+4. The app will start automatically when you log in
+
+## Contributing
+
+This is a simple, focused tool. Contributions welcome for bug fixes and improvements.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
