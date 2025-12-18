@@ -32,6 +32,7 @@ struct CLI {
         var user: String?
         var repo: String?
         var issue: Int?
+        var host: String?
 
         var i = 1
         while i < args.count {
@@ -52,6 +53,11 @@ struct CLI {
                     issue = Int(args[i + 1])
                     i += 1
                 }
+            case "--host":
+                if i + 1 < args.count {
+                    host = args[i + 1]
+                    i += 1
+                }
             default:
                 break
             }
@@ -59,13 +65,16 @@ struct CLI {
         }
 
         // Auto-detect from git if needed
-        if user == nil || repo == nil {
+        if user == nil || repo == nil || host == nil {
             if let gitInfo = detectGitInfo() {
                 if user == nil {
                     user = gitInfo.user
                 }
                 if repo == nil {
                     repo = gitInfo.repo
+                }
+                if host == nil {
+                    host = gitInfo.host
                 }
             }
         }
@@ -78,17 +87,20 @@ struct CLI {
             exit(1)
         }
 
+        // host is optional, defaults to github.com in IssueData
         let issueData = IssueData(
             user: finalUser,
             repository: finalRepo,
-            issueNumber: finalIssue
+            issueNumber: finalIssue,
+            host: host
         )
 
         IssueStore.shared.currentIssue = issueData
-        print("Set issue: \(issueData.repositoryText) #\(finalIssue)")
+        let hostInfo = host.map { " (\($0))" } ?? ""
+        print("Set issue: \(issueData.repositoryText) #\(finalIssue)\(hostInfo)")
     }
 
-    static func detectGitInfo() -> (user: String, repo: String)? {
+    static func detectGitInfo() -> (user: String, repo: String, host: String)? {
         // Try to get git remote URL
         let task = Process()
         task.launchPath = "/usr/bin/git"
@@ -113,19 +125,25 @@ struct CLI {
         }
     }
 
-    static func parseGitURL(_ url: String) -> (user: String, repo: String)? {
-        // Handle https://github.com/user/repo.git
-        // Handle git@github.com:user/repo.git
+    static func parseGitURL(_ url: String) -> (user: String, repo: String, host: String)? {
+        // Handle https://host.com/user/repo.git
+        // Handle git@host.com:user/repo.git
+        // Support GitHub, GitLab, Bitbucket, and other git hosts
         let patterns = [
-            #"github\.com[:/]([^/]+)/([^/]+?)(\.git)?$"#
+            #"([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})[:/]([^/]+)/([^/]+?)(\.git)?$"#
         ]
 
         for pattern in patterns {
             if let regex = try? NSRegularExpression(pattern: pattern),
                let match = regex.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)) {
-                if let userRange = Range(match.range(at: 1), in: url),
-                   let repoRange = Range(match.range(at: 2), in: url) {
-                    return (String(url[userRange]), String(url[repoRange]))
+                if let hostRange = Range(match.range(at: 1), in: url),
+                   let userRange = Range(match.range(at: 2), in: url),
+                   let repoRange = Range(match.range(at: 3), in: url) {
+                    return (
+                        user: String(url[userRange]),
+                        repo: String(url[repoRange]),
+                        host: String(url[hostRange])
+                    )
                 }
             }
         }
@@ -139,6 +157,7 @@ struct CLI {
                 "user": issue.user,
                 "repository": issue.repository,
                 "issue": issue.issueNumber,
+                "host": issue.hostName,
                 "url": issue.url.absoluteString
             ]
             if let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
@@ -213,22 +232,28 @@ struct CLI {
     static func printUsage() {
         print("""
         Usage:
-          issueWidget --issue <number> [--repo <repo>] [--user <user>]
+          issueWidget --issue <number> [--repo <repo>] [--user <user>] [--host <host>]
           issueWidget --status
           issueWidget --clear
           issueWidget --quit
 
         Options:
-          --issue <number>  GitHub issue number
+          --issue <number>  Issue number
           --repo <repo>     Repository name (auto-detected from git if omitted)
-          --user <user>     GitHub username (auto-detected from git if omitted)
+          --user <user>     Username (auto-detected from git if omitted)
+          --host <host>     Git host (auto-detected from git, defaults to github.com)
           --status          Show current issue as JSON
           --clear           Clear the current issue
           --quit            Quit the IssueWidget app
 
+        Supported hosts:
+          GitHub, GitLab, Bitbucket, and other standard git hosts
+          Trello (--user is board ID, opens board directly)
+
         Examples:
-          issueWidget --issue 266
-          issueWidget --user microsoft --repo vscode --issue 12345
+          issueWidget --issue 1
+          issueWidget --user phaoust --repo issueWidget --issue 1
+          issueWidget --host gitlab.com --user myuser --repo myrepo --issue 42
           issueWidget --status
           issueWidget --clear
           issueWidget --quit

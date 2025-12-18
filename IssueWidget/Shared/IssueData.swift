@@ -4,9 +4,27 @@ struct IssueData: Codable {
     let user: String
     let repository: String
     let issueNumber: Int
+    let host: String?
 
     var url: URL {
-        URL(string: "https://github.com/\(user)/\(repository)/issues/\(issueNumber)")!
+        let effectiveHost = host ?? "github.com"
+        let urlString: String
+
+        // Different providers use different URL patterns
+        if effectiveHost.contains("gitlab") {
+            // GitLab uses /-/issues/ format
+            urlString = "https://\(effectiveHost)/\(user)/\(repository)/-/issues/\(issueNumber)"
+        } else if effectiveHost.contains("trello") {
+            // Trello: user=board_id, repository=card_shortlink or search term
+            // If issueNumber looks like it could be a card number, search for it
+            // Format: https://trello.com/b/BOARD_ID then search for card
+            urlString = "https://trello.com/b/\(user)"
+        } else {
+            // GitHub, Bitbucket, and others use /issues/ format
+            urlString = "https://\(effectiveHost)/\(user)/\(repository)/issues/\(issueNumber)"
+        }
+
+        return URL(string: urlString)!
     }
 
     var displayText: String {
@@ -15,6 +33,10 @@ struct IssueData: Codable {
 
     var repositoryText: String {
         "\(user)/\(repository)"
+    }
+
+    var hostName: String {
+        host ?? "github.com"
     }
 }
 
