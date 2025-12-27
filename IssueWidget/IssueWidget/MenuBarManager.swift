@@ -1,11 +1,50 @@
 import Cocoa
 
-class MenuBarManager {
+class StatusBarView: NSView {
+    var onLeftClick: (() -> Void)?
+    var onRightClick: ((NSEvent) -> Void)?
+    var displayText: String = "○" {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.menuBarFont(ofSize: 0),
+            .foregroundColor: NSColor.controlTextColor
+        ]
+
+        let textSize = (displayText as NSString).size(withAttributes: attributes)
+        let textRect = NSRect(
+            x: (bounds.width - textSize.width) / 2,
+            y: (bounds.height - textSize.height) / 2,
+            width: textSize.width,
+            height: textSize.height
+        )
+
+        (displayText as NSString).draw(in: textRect, withAttributes: attributes)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onLeftClick?()
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick?(event)
+    }
+}
+
+class MenuBarManager: NSObject, NSMenuDelegate {
     private let statusItem: NSStatusItem
     private let issueStore = IssueStore.shared
+    private var customView: StatusBarView?
 
     init(statusItem: NSStatusItem) {
         self.statusItem = statusItem
+        super.init()
         setupStatusItem()
         updateDisplay()
 
@@ -27,10 +66,19 @@ class MenuBarManager {
     }
 
     private func setupStatusItem() {
-        if let button = statusItem.button {
-            button.target = self
-            button.action = #selector(handleClick)
+        // Create custom view with a reasonable initial width
+        let view = StatusBarView(frame: NSRect(x: 0, y: 0, width: 40, height: 22))
+
+        view.onLeftClick = { [weak self] in
+            self?.handleLeftClick()
         }
+
+        view.onRightClick = { [weak self] event in
+            self?.handleRightClick(event: event)
+        }
+
+        statusItem.view = view
+        customView = view
     }
 
     @objc private func handleIssueDataChanged() {
@@ -46,35 +94,54 @@ class MenuBarManager {
     }
 
     private func updateDisplay() {
-        guard let button = statusItem.button else { return }
-
         if let issue = issueStore.currentIssue {
-            button.title = issue.displayText
-            button.toolTip = issue.repositoryText
+            customView?.displayText = issue.displayText
+            customView?.toolTip = issue.repositoryText
         } else {
-            button.title = "○"
-            button.toolTip = "No active issue"
+            customView?.displayText = "○"
+            customView?.toolTip = "No active issue"
         }
     }
 
-    @objc private func handleClick() {
+    private func handleLeftClick() {
         if let issue = issueStore.currentIssue {
             NSWorkspace.shared.open(issue.url)
-        } else {
-            // Show a simple menu when no issue is set
-            showMenu()
         }
     }
 
-    private func showMenu() {
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "No active issue", action: nil, keyEquivalent: ""))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
+    private func handleRightClick(event: NSEvent) {
+        showContextMenu(event: event)
+    }
 
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil)
-        statusItem.menu = nil
+    private func showContextMenu(event: NSEvent) {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        if issueStore.currentIssue != nil {
+            let clearItem = NSMenuItem(title: "Clear", action: #selector(clearIssue), keyEquivalent: "")
+            clearItem.target = self
+            clearItem.isEnabled = true
+            menu.addItem(clearItem)
+        } else {
+            let noIssueItem = NSMenuItem(title: "No active issue", action: nil, keyEquivalent: "")
+            noIssueItem.isEnabled = false
+            menu.addItem(noIssueItem)
+        }
+
+        menu.addItem(NSMenuItem.separator())
+
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "")
+        quitItem.target = self
+        quitItem.isEnabled = true
+        menu.addItem(quitItem)
+
+        if let view = customView {
+            NSMenu.popUpContextMenu(menu, with: event, for: view)
+        }
+    }
+
+    @objc private func clearIssue() {
+        issueStore.clear()
     }
 
     @objc private func quitApp() {
